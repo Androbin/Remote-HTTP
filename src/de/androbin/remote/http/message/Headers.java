@@ -2,9 +2,9 @@ package de.androbin.remote.http.message;
 
 import de.androbin.util.*;
 import java.util.*;
-import java.util.function.*;
+import java.util.Map.*;
 
-public final class Headers {
+public final class Headers implements Iterable<Entry<NoCaseString, String>> {
   private final Map<NoCaseString, String> data;
   
   public Headers() {
@@ -19,12 +19,13 @@ public final class Headers {
     return data.containsKey( new NoCaseString( key ) );
   }
   
-  public void forEach( final BiConsumer<String, String> consumer ) {
-    data.forEach( ( key, value ) -> consumer.accept( key.value, value ) );
-  }
-  
   public String get( final String key ) {
     return data.get( new NoCaseString( key ) );
+  }
+  
+  @ Override
+  public Iterator<Entry<NoCaseString, String>> iterator() {
+    return data.entrySet().iterator();
   }
   
   public void put( final String key, final String value ) {
