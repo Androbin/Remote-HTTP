@@ -33,7 +33,7 @@ public final class MessageDecoder {
     
     while ( !( line = input.readLine() ).isEmpty() ) {
       final Pair<String, String> header = decodeHeader( line );
-      message.headers.put( header.key, header.value );
+      message.headers.add( header.key, header.value );
     }
   }
   
@@ -53,8 +53,8 @@ public final class MessageDecoder {
     
     decodeHeaders( input, request );
     
-    if ( request.headers.containsKey( CONTENT_LENGTH ) ) {
-      final int contentLength = Integer.parseInt( request.headers.get( CONTENT_LENGTH ) );
+    if ( request.headers.contains( CONTENT_LENGTH ) ) {
+      final int contentLength = Integer.parseInt( request.headers.getOne( CONTENT_LENGTH ) );
       request.body = decodeBody( input, contentLength );
     }
     
@@ -77,8 +77,8 @@ public final class MessageDecoder {
     
     decodeHeaders( input, response );
     
-    if ( response.headers.containsKey( CONTENT_LENGTH ) ) {
-      final int contentLength = Integer.parseInt( response.headers.get( CONTENT_LENGTH ) );
+    if ( response.headers.contains( CONTENT_LENGTH ) ) {
+      final int contentLength = Integer.parseInt( response.headers.getOne( CONTENT_LENGTH ) );
       response.body = decodeBody( input, contentLength );
     }
     

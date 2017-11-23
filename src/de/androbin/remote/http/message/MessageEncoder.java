@@ -3,7 +3,6 @@ package de.androbin.remote.http.message;
 import de.androbin.remote.http.message.Message.*;
 import de.androbin.util.*;
 import java.io.*;
-import java.util.*;
 
 public final class MessageEncoder {
   private MessageEncoder() {
@@ -11,10 +10,10 @@ public final class MessageEncoder {
   
   private static void encodeHeaders( final Message message, final BufferedWriter output )
       throws IOException {
-    for ( final Map.Entry<NoCaseString, String> entry : message.headers ) {
-      output.write( entry.getKey().value );
+    for ( final Pair<String, String> entry : message.headers ) {
+      output.write( entry.key );
       output.write( ": " );
-      output.write( entry.getValue() );
+      output.write( entry.value );
       output.write( "\r\n" );
     }
   }

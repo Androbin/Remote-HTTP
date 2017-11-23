@@ -9,7 +9,7 @@ public final class Messages {
   
   static {
     final Response.Builder response = new Response.Builder();
-    response.headers.put( "Access-Control-Allow-Origin", "*" );
+    response.headers.add( "Access-Control-Allow-Origin", "*" );
     
     response.statusCode = 204;
     response.statusText = "No Content";
