@@ -17,6 +17,14 @@ public abstract class Message {
       headers = new Headers();
     }
     
+    public void setContentLengthHeader() {
+      if ( body == null ) {
+        headers.remove( "content-length" );
+      } else {
+        headers.set( "content-length", String.valueOf( body.length() ) );
+      }
+    }
+    
     public abstract Message build();
   }
   

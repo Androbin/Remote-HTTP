@@ -6,7 +6,7 @@ import de.androbin.util.*;
 import java.io.*;
 
 public final class MessageDecoder {
-  private static final String CONTENT_LENGTH = "Content-Length";
+  private static final String CONTENT_LENGTH = "content-length";
   
   private MessageDecoder() {
   }
