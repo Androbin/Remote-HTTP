@@ -54,12 +54,22 @@ public final class Headers implements Iterable<Pair<String, String>> {
         final Pair<String, String> pair = new Pair<>( last.getKey(), values.get( index ) );
         
         if ( ++index == values.size() ) {
-          last = iter.next();
+          last = null;
           index = 0;
         }
         
         return pair;
       }
     };
+  }
+  
+  public void remove( final String key ) {
+    data.remove( key.toLowerCase() );
+  }
+  
+  public void set( final String key, final String value ) {
+    final List<String> values = new ArrayList<>();
+    values.add( value );
+    data.put( key.toLowerCase(), values );
   }
 }

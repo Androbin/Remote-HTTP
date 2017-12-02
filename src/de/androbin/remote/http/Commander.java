@@ -52,6 +52,7 @@ public final class Commander implements Runnable {
     }
     
     thread.interrupt();
+    output.add( () -> Messages.RESPONSE_ERROR_204 );
   }
   
   @ Override
