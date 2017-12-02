@@ -9,6 +9,8 @@ import java.io.*;
 
 public final class HTTPHandle implements Handle {
   private final Commander commander;
+  
+  private boolean running;
   private boolean terminate;
   
   public HTTPHandle( final RouteIndex routeIndex ) {
@@ -16,17 +18,19 @@ public final class HTTPHandle implements Handle {
   }
   
   @ Override
-  public boolean handle( final ServerContext server, final ClientContext client ) {
+  public void handleInput( final ServerContext server, final ClientContext client ) {
     final Request request;
     
     try {
       request = MessageDecoder.decodeRequest( client.input );
     } catch ( final IOException e ) {
-      return false;
+      stop();
+      return;
     }
     
     if ( request == null ) {
-      return false;
+      stop();
+      return;
     }
     
     server.log( "\t\t<request>" + request.method + " " + request.target + "</request>" );
@@ -35,25 +39,32 @@ public final class HTTPHandle implements Handle {
       switch ( request.target ) {
         case "/interrupt":
           commander.interrupt();
-          return true;
+          return;
         case "/terminate":
-          stop();
+          terminate = true;
         case "/disconnect":
-          return false;
+          stop();
+          return;
       }
     }
     
     commander.enqueue( request );
-    
+  }
+  
+  @ Override
+  public void handleOutput( final ServerContext server, final ClientContext client ) {
     final Response response = commander.dequeue();
     
     try {
       MessageEncoder.encodeResponse( response, client.output );
     } catch ( final IOException e ) {
-      return false;
+      stop();
     }
-    
-    return true;
+  }
+  
+  @ Override
+  public boolean isRunning() {
+    return running;
   }
   
   @ Override
@@ -63,13 +74,13 @@ public final class HTTPHandle implements Handle {
   
   @ Override
   public void start() {
-    terminate = false;
+    running = true;
     commander.start();
   }
   
   @ Override
   public void stop() {
-    terminate = true;
+    running = false;
     commander.stop();
   }
 }

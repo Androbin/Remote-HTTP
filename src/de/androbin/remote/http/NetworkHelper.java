@@ -5,62 +5,92 @@ import de.androbin.remote.http.message.Message.*;
 import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
+import java.util.function.*;
 
-public final class NetworkHelper implements Runnable {
+public final class NetworkHelper {
   private static final String IP_REGEX = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
   
-  private Thread thread;
+  private Thread senderThread;
+  private Thread receiverThread;
   private volatile boolean running;
-  
-  private final BlockingQueue<Request> queue;
   
   private Socket socket;
   
-  private BufferedReader inputStream;
   private BufferedWriter outputStream;
+  private BufferedReader inputStream;
+  
+  private final BlockingQueue<Supplier<Request>> output;
+  private final BlockingQueue<Response> input;
   
   public NetworkHelper() {
-    this.queue = new LinkedBlockingQueue<>();
+    this.input = new LinkedBlockingQueue<>();
+    this.output = new LinkedBlockingQueue<>();
   }
   
   public static boolean checkAddress( final String ip, final int port ) {
     return ip.matches( IP_REGEX ) && port >= 1024 && port < 49152;
   }
   
-  @ Override
-  public void run() {
+  public Response receive() {
+    try {
+      return input.take();
+    } catch ( final InterruptedException e ) {
+      return null;
+    }
+  }
+  
+  public void runReceiver() {
     while ( running ) {
-      final Request request;
+      final Response response;
       
       try {
-        request = queue.take();
-      } catch ( final InterruptedException e ) {
-        continue;
-      }
-      
-      try {
-        MessageEncoder.encodeRequest( request, outputStream );
+        response = MessageDecoder.decodeResponse( inputStream );
       } catch ( final IOException ignore ) {
         running = false;
         continue;
       }
       
       try {
-        MessageDecoder.decodeResponse( inputStream );
-      } catch ( final IOException ignore ) {
+        input.put( response );
+      } catch ( final InterruptedException e ) {
         running = false;
       }
     }
   }
   
-  public void send( final Request request, final boolean keep ) {
-    if ( !running && !keep ) {
-      return;
+  public void runSender() {
+    while ( running ) {
+      final Supplier<Request> request;
+      
+      try {
+        request = output.take();
+      } catch ( final InterruptedException e ) {
+        continue;
+      }
+      
+      try {
+        MessageEncoder.encodeRequest( request.get(), outputStream );
+      } catch ( final IOException e ) {
+        running = false;
+      }
     }
-    
+  }
+  
+  public void send( final Supplier<Request> request ) {
     try {
-      queue.put( request );
+      output.put( request );
     } catch ( final InterruptedException ignore ) {
+    }
+  }
+  
+  public Response sendAndReceive( final Lock lock, final Supplier<Request> request ) {
+    lock.lock();
+    send( request );
+    
+    synchronized ( this ) {
+      lock.unlock();
+      return receive();
     }
   }
   
@@ -71,16 +101,22 @@ public final class NetworkHelper implements Runnable {
     
     try {
       socket = new Socket( ip, port );
-      inputStream = new BufferedReader( new InputStreamReader( socket.getInputStream() ) );
       outputStream = new BufferedWriter( new OutputStreamWriter( socket.getOutputStream() ) );
+      inputStream = new BufferedReader( new InputStreamReader( socket.getInputStream() ) );
     } catch ( final IOException e ) {
       return false;
     }
     
     running = true;
-    thread = new Thread( this, "NetworkHelper" );
-    thread.setDaemon( true );
-    thread.start();
+    
+    senderThread = new Thread( this::runSender, "NetworkHelper Sender" );
+    senderThread.setDaemon( true );
+    senderThread.start();
+    
+    receiverThread = new Thread( this::runReceiver, "NetworkHelper Receiver" );
+    receiverThread.setDaemon( true );
+    receiverThread.start();
+    
     return true;
   }
   
@@ -90,8 +126,12 @@ public final class NetworkHelper implements Runnable {
     }
     
     running = false;
-    thread.interrupt();
-    thread = null;
+    
+    senderThread.interrupt();
+    senderThread = null;
+    
+    receiverThread.interrupt();
+    receiverThread = null;
     
     try {
       socket.close();
