@@ -8,13 +8,6 @@ public final class MessageEncoder {
   private MessageEncoder() {
   }
   
-  private static void encodeBody( final Message message, final BufferedWriter output )
-      throws IOException {
-    if ( message.body != null ) {
-      output.write( message.body );
-    }
-  }
-  
   private static void encodeHeaders( final Message message, final BufferedWriter output )
       throws IOException {
     for ( final Pair<String, String> entry : message.headers ) {
@@ -36,7 +29,8 @@ public final class MessageEncoder {
     
     encodeHeaders( request, output );
     output.write( "\r\n" );
-    encodeBody( request, output );
+    
+    output.write( request.body );
     output.flush();
   }
   
@@ -51,7 +45,8 @@ public final class MessageEncoder {
     
     encodeHeaders( response, output );
     output.write( "\r\n" );
-    encodeBody( response, output );
+    
+    output.write( response.body );
     output.flush();
   }
 }

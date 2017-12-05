@@ -6,7 +6,7 @@ public abstract class Message {
   
   private Message( final Builder builder ) {
     this.headers = new Headers( builder.headers );
-    this.body = builder.body;
+    this.body = builder.body == null ? "" : builder.body;
   }
   
   public static abstract class Builder {
@@ -19,7 +19,7 @@ public abstract class Message {
     
     public void setContentLengthHeader() {
       if ( body == null ) {
-        headers.remove( "content-length" );
+        headers.set( "content-length", "0" );
       } else {
         headers.set( "content-length", String.valueOf( body.length() ) );
       }
@@ -88,7 +88,7 @@ public abstract class Message {
     public static final class Builder extends Message.Builder {
       public String version = "HTTP/1.1";
       public int statusCode = 200;
-      public String statusText = "OK";
+      public String statusText = Messages.STATUS_TEXT_200;
       
       @ Override
       public Response build() {
