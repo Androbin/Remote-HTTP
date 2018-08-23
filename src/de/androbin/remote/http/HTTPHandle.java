@@ -18,11 +18,11 @@ public final class HTTPHandle implements Handle {
   }
   
   @ Override
-  public void handleInput( final ServerContext server, final ClientContext client ) {
+  public void handleInput( final ServerContext server, final BufferedReader client ) {
     final Request request;
     
     try {
-      request = MessageDecoder.decodeRequest( client.input );
+      request = MessageDecoder.decodeRequest( client );
     } catch ( final IOException e ) {
       stop();
       return;
@@ -52,11 +52,11 @@ public final class HTTPHandle implements Handle {
   }
   
   @ Override
-  public void handleOutput( final ServerContext server, final ClientContext client ) {
+  public void handleOutput( final ServerContext server, final BufferedWriter client ) {
     final Response response = commander.dequeue();
     
     try {
-      MessageEncoder.encodeResponse( response, client.output );
+      MessageEncoder.encodeResponse( response, client );
     } catch ( final IOException e ) {
       stop();
     }
